@@ -1,13 +1,10 @@
 Structly
 ======
-While this may in the future support more than JSON at the moment its purely designed to give feedback for json.
+A struct data validator, designed to give human-readable feedback and documentation generation.
 
-Need to make documentation for this library, for now see its use in relcon once that is released.
+We suggest to use serde to serialise and deserialise into basic types and then apply more advanced human-readable constraints after.
 
-This library is still in heavy development, and may change a lot depending on feedback and issues/improvemnets discovered as I use it for my own projects.
-
-One example of a limitation is that this library is more designed to perform validation after serde has de-serialised the full struct.
-It is at least not likely to be currently compatible with more complex object e.g. flattening, using tags or untagged values as these may error before any of the structly checks happen.
+To pair the default serde feedback with this, we will be looking to add a method to pass serde errors in to possibly enhance them with documentation.
 
 While you are welcome to use it for your own projects, just bare this in mind. Though if you need assistance migrating your project feel free to ask any questions.
 
