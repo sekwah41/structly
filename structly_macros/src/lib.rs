@@ -7,9 +7,11 @@ pub fn derive_structly(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     let struct_name = &input.ident;
 
+    eprintln!("expanding Structly for: {}", input.ident);
+
     quote! {
-        impl #struct_name {
-            pub fn validate(&self) -> Result<(), Vec<String>> {
+        impl ::structly::Verify for #struct_name {
+            fn verify(&self) -> Result<(), Vec<String>> {
                 let errors: Vec<String> = Vec::new();
                 if errors.is_empty() {
                     Ok(())

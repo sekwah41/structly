@@ -1,5 +1,8 @@
-use structly_macros::Structly;
 
+use structly::{Structly, Verify};
+
+// Just to stop it complaining for now
+#[allow(unused)]
 #[derive(Structly)]
 struct Demo {
     #[structly(name = "Label", description = "This is a fun label description")]
@@ -8,5 +11,5 @@ struct Demo {
 
 fn main() {
     let d = Demo { label: None };
-    println!("{:?}", d.validate());
+    println!("{:?}", d.verify());
 }

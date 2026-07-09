@@ -11,3 +11,5 @@ While you are welcome to use it for your own projects, just bare this in mind. T
 If you have an issue or want to discuss a possible feature/change to the library feel free to create an issue.
 I do also check emails at contact@sekwah.com however its more likely to get responded to if it's an issue.
 
+https://github.com/dtolnay/cargo-expand
+
