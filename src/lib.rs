@@ -20,5 +20,5 @@ impl std::fmt::Display for ValidationError {
 }
 
 pub trait Verify {
-    fn verify(&self) -> Result<(), Vec<String>>;
+    fn verify(&self) -> Result<(), Vec<ValidationError>>;
 }

@@ -1,0 +1,5 @@
+error: unknown mode `sometimes` - expected one of: all, fail_fast, any
+ --> tests/compile_fail/invalid_mode.rs:5:23
+  |
+5 |     #[structly(mode = "sometimes")]
+  |                       ^^^^^^^^^^^

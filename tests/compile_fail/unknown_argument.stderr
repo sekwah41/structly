@@ -1,0 +1,5 @@
+error: unknown structly argument `nickname` - expected `name`, `description`, or `mode`
+ --> tests/compile_fail/unknown_argument.rs:5:16
+  |
+5 |     #[structly(nickname = "oops")]
+  |                ^^^^^^^^

@@ -1,0 +1,5 @@
+error: only structs are supported
+ --> tests/compile_fail/on_enum.rs:4:6
+  |
+4 | enum Demo {
+  |      ^^^^

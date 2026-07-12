@@ -1,5 +1,8 @@
+//! Core derive behaviour: the `Structly` derive wires up the `Verify` trait.
+
 use structly::{Structly, Verify};
 
+#[allow(unused)]
 #[derive(Structly)]
 struct Demo {
     #[structly(name = "Label", description = "This is a fun label description")]

@@ -1,0 +1,5 @@
+error: duplicate `mode` argument
+ --> tests/compile_fail/duplicate_mode.rs:5:30
+  |
+5 |     #[structly(mode = "all", mode = "any")]
+  |                              ^^^^
