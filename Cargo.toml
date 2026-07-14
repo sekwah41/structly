@@ -1,14 +1,25 @@
 [package]
 name = "structly"
-version = "0.1.0"
-edition = "2024"
+description = "A struct data validator designed to give human-readable feedback, with markdown documentation generation via the companion structly_cli."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+readme = "README.md"
 
 [workspace]
-members = ["structly_macros"]
+members = ["structly_macros", "structly_core", "structly_cli"]
 resolver = "2"
 
+# https://doc.rust-lang.org/cargo/reference/workspaces.html
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+repository = "https://codeberg.org/Sekwah/structly"
+
 [dependencies]
-structly_macros = { path = "structly_macros" }
+structly_macros = { path = "structly_macros", version = "0.1.0" }
 
 [dev-dependencies]
 serde = "1.0.228"

@@ -122,11 +122,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "structly_cli"
+version = "0.1.0"
+dependencies = [
+ "structly_core",
+ "syn",
+]
+
+[[package]]
+name = "structly_core"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "structly_macros"
 version = "0.1.0"
 dependencies = [
  "proc-macro2",
  "quote",
+ "structly_core",
  "syn",
 ]
 

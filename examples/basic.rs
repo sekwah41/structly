@@ -1,4 +1,3 @@
-
 use structly::{Structly, Verify};
 
 #[allow(unused)]

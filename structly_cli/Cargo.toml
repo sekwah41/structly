@@ -1,16 +1,16 @@
 [package]
-name = "structly_macros"
-description = "Derive macros for structly. Not intended for direct use - use the structly crate."
+name = "structly_cli"
+description = "CLI for structly: generate markdown documentation for #[derive(Structly)] structs by parsing your source code."
+# https://doc.rust-lang.org/cargo/reference/workspaces.html
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
 
-[lib]
-proc-macro = true
+[[bin]]
+name = "structly"
+path = "src/main.rs"
 
 [dependencies]
-proc-macro2 = "1.0.106"
-quote = "1.0.46"
 structly_core = { path = "../structly_core", version = "0.1.0" }
 syn = { version = "2.0.118", features = ["full", "extra-traits"] }

@@ -1,12 +1,5 @@
 pub use structly_macros::Structly;
 
-#[derive(Debug, Clone, Copy)]
-pub struct FieldMeta {
-    pub field: &'static str,
-    pub name: &'static str,
-    pub description: &'static str,
-}
-
 #[derive(Debug, Clone)]
 pub struct ValidationError {
     /// Field path, dotted for nested structs (e.g. `database.cert`).
