@@ -44,6 +44,8 @@ struct FieldConfig {
     description: Option<String>,
     mode: Option<String>,
     rules: Vec<Rule>,
+    /// `#[structly(nested)]`: recurse into this field's own `verify()`.
+    nested: bool,
 }
 
 /// Collect a field's `structly` / `structly_if` attributes into a [`FieldConfig`].
@@ -73,9 +75,10 @@ fn parse_structly_attr(attr: &syn::Attribute, config: &mut FieldConfig) -> syn::
                 }
                 config.mode = Some(parse_enum_arg(&meta, &["all", "fail_fast", "any"], "mode")?);
             }
+            Some("nested") => config.nested = true,
             Some(other) => {
                 return Err(meta.error(format!(
-                    "unknown structly argument `{other}` - expected `name`, `description`, or `mode`"
+                    "unknown structly argument `{other}` - expected `name`, `description`, `mode`, or `nested`"
                 )));
             }
             None => return Err(meta.error("expected a simple identifier")),
@@ -129,7 +132,7 @@ fn field_checks(field: &syn::Field, config: &FieldConfig) -> proc_macro2::TokenS
 
     let push = |reason: &str| {
         quote! {
-            errors.push(::structly::ValidationError { field: #field_str, reason: #reason });
+            errors.push(::structly::ValidationError::new(#field_str, #reason));
         }
     };
 
@@ -202,9 +205,25 @@ fn expand(input: &DeriveInput) -> syn::Result<proc_macro2::TokenStream> {
     let mut checks = Vec::new();
     for field in fields {
         let config = parse_field_config(field)?;
-        let field_checks = field_checks(field, &config);
-        if !field_checks.is_empty() {
-            checks.push(field_checks);
+        let mut per_field = field_checks(field, &config);
+
+        // `#[structly(nested)]`: recurse into the field's own `verify()` and
+        // prefix each error's path with this field's name (`section.field`).
+        if config.nested {
+            let field_ident = field.ident.as_ref().unwrap();
+            let field_str = field_ident.to_string();
+            per_field.extend(quote! {
+                if let Err(nested_errors) = ::structly::Verify::verify(&self.#field_ident) {
+                    for mut nested_error in nested_errors {
+                        nested_error.field = ::std::format!("{}.{}", #field_str, nested_error.field);
+                        errors.push(nested_error);
+                    }
+                }
+            });
+        }
+
+        if !per_field.is_empty() {
+            checks.push(per_field);
         }
     }
 

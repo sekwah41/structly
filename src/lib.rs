@@ -7,10 +7,18 @@ pub struct FieldMeta {
     pub description: &'static str,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct ValidationError {
-    pub field: &'static str,
+    /// Field path, dotted for nested structs (e.g. `database.cert`).
+    pub field: String,
     pub reason: &'static str,
+}
+
+impl ValidationError {
+    /// Construct an error; `field` accepts a bare `&str` so callers avoid `.into()`.
+    pub fn new(field: impl Into<String>, reason: &'static str) -> Self {
+        Self { field: field.into(), reason }
+    }
 }
 
 impl std::fmt::Display for ValidationError {
