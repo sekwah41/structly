@@ -158,10 +158,17 @@ fn field_checks(field: &syn::Field, config: &FieldConfig) -> proc_macro2::TokenS
                 let cond = &rule.condition;
                 quote! { !((#cond) && self.#field_ident.is_none()) }
             });
-            let pushes = config.rules.iter().map(|rule| push(&rule.reason));
+            // Every rule failed: collapse them into one human-readable error
+            // listing the alternatives, built at expansion time.
+            let mut combined = String::from("One of the following must be true:");
+            for rule in &config.rules {
+                combined.push_str("\n - ");
+                combined.push_str(&rule.reason);
+            }
+            let push = push(&combined);
             quote! {
                 if !( false #( || #passes )* ) {
-                    #(#pushes)*
+                    #push
                 }
             }
         }

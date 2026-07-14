@@ -101,12 +101,10 @@ fn any_mode_passes_when_a_single_rule_passes() {
 fn any_mode_fails_only_when_every_rule_fails() {
     let cfg = AnyThree { field: None, a: true, b: true, c: true };
     let err = cfg.verify().expect_err("expected validation errors");
-    // Every rule failed, so each contributes its reason, in declaration order.
-    assert_eq!(err.len(), 3);
+    // Every rule failed, so they collapse into one combined, human-readable error.
+    assert_eq!(err.len(), 1);
     assert_eq!(err[0].field, "field");
-    assert_eq!(err[0].reason, "a");
-    assert_eq!(err[1].reason, "b");
-    assert_eq!(err[2].reason, "c");
+    assert_eq!(err[0].reason, "One of the following must be true:\n - a\n - b\n - c");
 }
 
 #[test]

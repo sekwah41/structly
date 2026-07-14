@@ -91,8 +91,12 @@ fn any_mode_passes_when_at_least_one_rule_passes() {
 fn any_mode_fails_when_every_rule_fails() {
     let config = AnyMode { value: None, card_payment: true, bank_payment: true };
     let err = config.verify().expect_err("expected validation errors");
-    assert!(!err.is_empty());
+    assert_eq!(err.len(), 1);
     assert_eq!(err[0].field, "value");
+    assert_eq!(
+        err[0].reason,
+        "One of the following must be true:\n - value required for card payments\n - value required for bank payments"
+    );
 }
 
 #[test]
