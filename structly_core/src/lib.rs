@@ -3,7 +3,7 @@
 
 use quote::ToTokens;
 use syn::meta::ParseNestedMeta;
-use syn::{Expr, LitStr};
+use syn::{Expr, ExprLit, Lit, LitStr};
 
 macro_rules! str_arg {
     ($meta:expr, $target:expr, $name:literal) => {{
@@ -51,6 +51,9 @@ pub struct FieldConfig {
 }
 
 /// Collect a field's `structly` / `structly_if` attributes into a [`FieldConfig`].
+///
+/// When no `#[structly(description = ...)]` is given, the field's `///` doc
+/// comment (if any) is used as the description, like clap does for help text.
 pub fn parse_field_config(field: &syn::Field) -> syn::Result<FieldConfig> {
     let mut config = FieldConfig::default();
 
@@ -62,7 +65,32 @@ pub fn parse_field_config(field: &syn::Field) -> syn::Result<FieldConfig> {
         }
     }
 
+    if config.description.is_none() {
+        config.description = doc_comment(&field.attrs);
+    }
+
     Ok(config)
+}
+
+/// Join a field's `///` lines (each a `#[doc = "..."]` attribute) into one
+/// multiline description, dropping only the single leading space rustdoc
+/// leaves on each line (`/// text` is stored as `" text"`).
+fn doc_comment(attrs: &[syn::Attribute]) -> Option<String> {
+    let mut lines: Vec<String> = Vec::new();
+
+    for attr in attrs {
+        if !attr.path().is_ident("doc") {
+            continue;
+        }
+        if let syn::Meta::NameValue(nv) = &attr.meta {
+            if let Expr::Lit(ExprLit { lit: Lit::Str(text), .. }) = &nv.value {
+                let line = text.value();
+                lines.push(line.strip_prefix(' ').unwrap_or(&line).to_string());
+            }
+        }
+    }
+
+    (!lines.is_empty()).then(|| lines.join("\n"))
 }
 
 /// Parse a single `#[structly(...)]` attribute into `config`.
@@ -393,6 +421,36 @@ mod tests {
         assert_eq!(enabled.field, "enabled");
         assert_eq!(enabled.name, "enabled");
         assert!(enabled.rules.is_empty());
+    }
+
+    #[test]
+    fn falls_back_to_doc_comments_for_descriptions() {
+        let item = parse_struct(
+            r#"
+            #[derive(Structly)]
+            struct Demo {
+                /// Multiline docs are kept as-is,
+                /// including this second line.
+                ///
+                /// And this paragraph.
+                documented: bool,
+
+                /// Doc comment loses.
+                #[structly(description = "Explicit wins.")]
+                explicit: bool,
+
+                bare: bool,
+            }
+            "#,
+        );
+
+        let doc = build_struct_doc(&item, &mut |_| None).unwrap();
+        assert_eq!(
+            doc.fields[0].description,
+            "Multiline docs are kept as-is,\nincluding this second line.\n\nAnd this paragraph."
+        );
+        assert_eq!(doc.fields[1].description, "Explicit wins.");
+        assert_eq!(doc.fields[2].description, "");
     }
 
     #[test]

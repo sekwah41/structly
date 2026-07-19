@@ -1,3 +1,1 @@
 release_trigger = "pr"
-another_configurable = "some value"
-number_value = "test"
