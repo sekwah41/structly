@@ -19,7 +19,7 @@ license = "MIT"
 repository = "https://codeberg.org/Sekwah/structly"
 
 [dependencies]
-structly_macros = { path = "structly_macros", version = "0.1.0" }
+structly_macros = { path = "structly_macros", version = "0.2.0" }
 
 [dev-dependencies]
 serde = "1.0.228"

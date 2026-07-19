@@ -12,5 +12,5 @@ name = "structly"
 path = "src/main.rs"
 
 [dependencies]
-structly_core = { path = "../structly_core", version = "0.1.0" }
+structly_core = { path = "../structly_core", version = "0.2.0" }
 syn = { version = "2.0.118", features = ["full", "extra-traits"] }
