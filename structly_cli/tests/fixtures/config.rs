@@ -20,12 +20,23 @@ struct Server {
 }
 
 #[derive(Structly)]
+struct CommitCategory {
+    #[structly_if(when = self.custom, reason = "name required for custom categories")]
+    name: Option<String>,
+
+    custom: bool,
+}
+
+#[derive(Structly)]
 struct AppConfig {
     #[structly(description = "Database connection settings.", nested)]
     database: Database,
 
     #[structly(nested)]
     server: Server,
+
+    #[structly(nested)]
+    categories: Vec<CommitCategory>,
 }
 
 #[derive(Debug)]

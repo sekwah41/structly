@@ -12,5 +12,5 @@ proc-macro = true
 [dependencies]
 proc-macro2 = "1.0.106"
 quote = "1.0.46"
-structly_core = { path = "../structly_core", version = "0.2.0" }
+structly_core = { path = "../structly_core", version = "0.3.0" }
 syn = { version = "2.0.118", features = ["full", "extra-traits"] }

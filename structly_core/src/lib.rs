@@ -82,11 +82,11 @@ fn doc_comment(attrs: &[syn::Attribute]) -> Option<String> {
         if !attr.path().is_ident("doc") {
             continue;
         }
-        if let syn::Meta::NameValue(nv) = &attr.meta {
-            if let Expr::Lit(ExprLit { lit: Lit::Str(text), .. }) = &nv.value {
-                let line = text.value();
-                lines.push(line.strip_prefix(' ').unwrap_or(&line).to_string());
-            }
+        if let syn::Meta::NameValue(nv) = &attr.meta
+            && let Expr::Lit(ExprLit { lit: Lit::Str(text), .. }) = &nv.value
+        {
+            let line = text.value();
+            lines.push(line.strip_prefix(' ').unwrap_or(&line).to_string());
         }
     }
 
@@ -173,6 +173,9 @@ pub struct FieldDoc {
     pub rules: Vec<RuleDoc>,
     /// Whether the field is marked `#[structly(nested)]`.
     pub nested: bool,
+    /// Whether the field is a list container (`Vec<T>`, `[T; N]`, `[T]`), so
+    /// nested paths render as `field[].child`.
+    pub list: bool,
     /// The nested struct's own documentation, when it could be resolved.
     pub section: Option<StructDoc>,
 }
@@ -202,6 +205,39 @@ fn tidy_token_string(tokens: &str) -> String {
         .replace(" )", ")")
         .replace(" ,", ",")
         .replace("! ", "!")
+}
+
+/// The element type when `ty` is a list container (`Vec<T>`, `[T; N]`, `[T]`),
+/// or `None` for anything else.
+pub fn list_element_type(ty: &syn::Type) -> Option<&syn::Type> {
+    match ty {
+        syn::Type::Array(array) => Some(&array.elem),
+        syn::Type::Slice(slice) => Some(&slice.elem),
+        syn::Type::Path(path) => {
+            let segment = path.path.segments.last()?;
+            if segment.ident != "Vec" {
+                return None;
+            }
+            let syn::PathArguments::AngleBracketed(args) = &segment.arguments else {
+                return None;
+            };
+            args.args.iter().find_map(|arg| match arg {
+                syn::GenericArgument::Type(inner) => Some(inner),
+                _ => None,
+            })
+        }
+        _ => None,
+    }
+}
+
+/// Peel list containers off `ty` until a non-list type remains, so a nested
+/// `Vec<Database>` (or `Vec<Vec<Database>>`) resolves to `Database`.
+pub fn nested_element_type(ty: &syn::Type) -> &syn::Type {
+    let mut ty = ty;
+    while let Some(inner) = list_element_type(ty) {
+        ty = inner;
+    }
+    ty
 }
 
 /// Whether a struct has `Structly` in one of its `#[derive(...)]` lists.
@@ -267,6 +303,7 @@ where
                 })
                 .collect(),
             nested: config.nested,
+            list: list_element_type(&field.ty).is_some(),
             section,
         });
     }
@@ -294,11 +331,25 @@ pub fn render_markdown(doc: &StructDoc) -> String {
 /// The heading text for a field at `path` (shared by the body and the TOC).
 fn field_heading(field: &FieldDoc, path: &str) -> String {
     if let Some(section) = &field.section {
-        format!("{path} (section: {})", section.name)
+        if field.list {
+            format!("{path} (list of {})", section.name)
+        } else {
+            format!("{path} (section: {})", section.name)
+        }
     } else if field.name != field.field {
         format!("{path} ({})", field.name)
     } else {
         path.to_string()
+    }
+}
+
+/// The path prefix a field contributes to its nested children: `field.` for a
+/// plain section, `field[].` for a list of sections.
+fn child_prefix(field: &FieldDoc, path: &str) -> String {
+    if field.list {
+        format!("{path}[].")
+    } else {
+        format!("{path}.")
     }
 }
 
@@ -326,7 +377,7 @@ fn render_toc(fields: &[FieldDoc], prefix: &str, indent: usize, out: &mut String
             heading_anchor(&heading)
         ));
         if let Some(section) = &field.section {
-            render_toc(&section.fields, &format!("{path}."), indent + 1, out);
+            render_toc(&section.fields, &child_prefix(field, &path), indent + 1, out);
         }
     }
 }
@@ -373,7 +424,7 @@ fn render_fields(fields: &[FieldDoc], prefix: &str, level: usize, out: &mut Stri
 
         if field.nested {
             if let Some(section) = &field.section {
-                render_fields(&section.fields, &format!("{path}."), level + 1, out);
+                render_fields(&section.fields, &child_prefix(field, &path), level + 1, out);
             } else {
                 out.push_str("\n_Nested section - type not found in the parsed sources._\n");
             }
@@ -513,6 +564,7 @@ mod tests {
                 mode: "all".to_string(),
                 rules: vec![],
                 nested: true,
+                list: false,
                 section: Some(nested),
             }],
         };
@@ -524,6 +576,64 @@ mod tests {
         assert!(md.contains("### database.cert"));
         assert!(md.contains("PEM certificate."));
         assert!(md.contains("- Required when `self.ssl`: cert required when ssl is on"));
+    }
+
+    #[test]
+    fn unwraps_list_containers_to_the_element_type() {
+        let name = |src: &str| {
+            let ty: syn::Type = syn::parse_str(src).unwrap();
+            match nested_element_type(&ty) {
+                syn::Type::Path(path) => path.path.segments.last().unwrap().ident.to_string(),
+                other => panic!("expected a path type, got {other:?}"),
+            }
+        };
+
+        assert_eq!(name("Database"), "Database");
+        assert_eq!(name("Vec<Database>"), "Database");
+        assert_eq!(name("std::vec::Vec<Database>"), "Database");
+        assert_eq!(name("[Database; 4]"), "Database");
+        assert_eq!(name("Vec<Vec<Database>>"), "Database");
+
+        let plain: syn::Type = syn::parse_str("Database").unwrap();
+        assert!(list_element_type(&plain).is_none());
+        let option: syn::Type = syn::parse_str("Option<Database>").unwrap();
+        assert!(list_element_type(&option).is_none());
+    }
+
+    #[test]
+    fn renders_list_sections_with_bracketed_paths() {
+        let inner = parse_struct(
+            r#"
+            #[derive(Structly)]
+            struct CommitCategory {
+                #[structly_if(when = self.custom, reason = "name required for custom categories")]
+                name: Option<String>,
+                custom: bool,
+            }
+            "#,
+        );
+        let outer = parse_struct(
+            r#"
+            #[derive(Structly)]
+            struct Changelog {
+                #[structly(nested)]
+                categories: Vec<CommitCategory>,
+            }
+            "#,
+        );
+
+        let doc = build_struct_doc(&outer, &mut |ty| {
+            let syn::Type::Path(path) = nested_element_type(ty) else { return None };
+            (path.path.segments.last()?.ident == "CommitCategory")
+                .then(|| build_struct_doc(&inner, &mut |_| None).unwrap())
+        })
+            .unwrap();
+
+        assert!(doc.fields[0].list);
+        let md = render_markdown(&doc);
+        assert!(md.contains("## categories (list of CommitCategory)"));
+        assert!(md.contains("### categories[].name"));
+        assert!(md.contains("- [categories[].name](#categoriesname)"));
     }
 
     #[test]
@@ -571,6 +681,7 @@ mod tests {
                     mode: "all".to_string(),
                     rules: vec![],
                     nested: true,
+                    list: false,
                     section: Some(nested),
                 },
                 FieldDoc {
@@ -580,6 +691,7 @@ mod tests {
                     mode: "all".to_string(),
                     rules: vec![],
                     nested: false,
+                    list: false,
                     section: None,
                 },
             ],

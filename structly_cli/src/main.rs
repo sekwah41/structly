@@ -101,8 +101,10 @@ fn collect_structs(items: &[syn::Item], index: &mut HashMap<String, syn::ItemStr
     }
 }
 
+/// The struct name a nested field refers to, looking through list containers
+/// so `Vec<Database>` and `[Database; 4]` resolve to `Database`.
 fn nested_type_name(ty: &syn::Type) -> Option<String> {
-    match ty {
+    match structly_core::nested_element_type(ty) {
         syn::Type::Path(path) => path.path.segments.last().map(|s| s.ident.to_string()),
         _ => None,
     }

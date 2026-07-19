@@ -92,15 +92,15 @@ fn expand(input: &DeriveInput) -> syn::Result<proc_macro2::TokenStream> {
         let mut per_field = field_checks(field, &config);
 
         // `#[structly(nested)]`: recurse into the field's own `verify()` and
-        // prefix each error's path with this field's name (`section.field`).
+        // prefix each error's path with this field's name (`section.field`, or
+        // `section[0].field` for list fields, which get `Verify` element-wise).
         if config.nested {
             let field_ident = field.ident.as_ref().unwrap();
             let field_str = field_ident.to_string();
             per_field.extend(quote! {
                 if let Err(nested_errors) = ::structly::Verify::verify(&self.#field_ident) {
-                    for mut nested_error in nested_errors {
-                        nested_error.field = ::std::format!("{}.{}", #field_str, nested_error.field);
-                        errors.push(nested_error);
+                    for nested_error in nested_errors {
+                        errors.push(nested_error.prefixed(#field_str));
                     }
                 }
             });

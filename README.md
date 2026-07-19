@@ -47,7 +47,10 @@ structly docs --struct AppConfig --path src/ --out docs/config.md
 - `--out <file>` - output file (default: stdout) (OUTPUT.md is in .gitignored)
 
 Fields marked `#[structly(nested)]` are resolved from the scanned sources and
-documented as subsections with dotted paths (e.g. `database.cert_path`).
+documented as subsections with dotted paths (e.g. `database.cert_path`). This
+also works through lists (`Vec<T>`, arrays, slices): each element is verified
+with indexed error paths (`categories[0].name`), and the docs use bracketed
+paths (`categories[].name`).
 
 From this workspace it can be run with `cargo run -p structly_cli -- docs ...`.
 

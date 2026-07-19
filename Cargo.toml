@@ -13,13 +13,13 @@ resolver = "2"
 
 # https://doc.rust-lang.org/cargo/reference/workspaces.html
 [workspace.package]
-version = "0.2.0"
+version = "0.3.0"
 edition = "2024"
 license = "MIT"
 repository = "https://codeberg.org/Sekwah/structly"
 
 [dependencies]
-structly_macros = { path = "structly_macros", version = "0.2.0" }
+structly_macros = { path = "structly_macros", version = "0.3.0" }
 
 [dev-dependencies]
 serde = "1.0.228"

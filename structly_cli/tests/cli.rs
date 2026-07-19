@@ -35,6 +35,9 @@ fn writes_markdown_to_stdout() {
     assert!(stdout.contains("## server (section: Server)"));
     assert!(stdout.contains("### server.domain"));
     assert!(stdout.contains("- Required when `self.public`: domain required for public servers"));
+    // List fields resolve through the container and use bracketed paths.
+    assert!(stdout.contains("## categories (list of CommitCategory)"));
+    assert!(stdout.contains("### categories[].name"));
     // Structs without the derive are ignored entirely.
     assert!(!stdout.contains("NotStructly"));
 }
