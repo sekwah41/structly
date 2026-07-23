@@ -1,1 +1,21 @@
 release_trigger = "pr"
+
+[[categories]]
+title = "Features ✨"
+tags = ["feat"]
+
+[[categories]]
+title = "Bug Fixes 🐛"
+tags = ["fix"]
+
+[[categories]]
+title = "Performance Improvements ⚡️"
+tags = ["perf"]
+
+[[categories]]
+title = "Changes to Existing Features 🔧"
+tags = ["tweak"]
+
+[[categories]]
+title = "Reverts ⏪️"
+tags = ["revert"]
