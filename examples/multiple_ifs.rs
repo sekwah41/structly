@@ -1,6 +1,7 @@
 //! The same two `structly_if` rules on one field, under each `mode`, so you can
 //! see how the surfaced errors differ.
 //!
+//! Example Scenario
 //! The `value` field is required when paying by card *and/or* by bank. Each
 //! struct below carries the identical pair of rules — only the `mode` changes.
 //!

@@ -1,5 +1,6 @@
 //! Two rules on one field, an expression condition, and `mode = "fail_fast"`.
 //!
+//! Example Scenario
 //! A load balancer is required if there is more than one replica *or* the
 //! deployment is public. `fail_fast` reports only the first rule that fails, so
 //! you fix one problem at a time.
